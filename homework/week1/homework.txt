@@ -1,0 +1,5 @@
+Week 1:
+exercises 2.1 - 2.3 of the textbook;
+exercises 1, 2 and 8 from Section 2.4 (pp. 52-55) of the ISL book
+
+http://faculty.marshall.usc.edu/gareth-james/
