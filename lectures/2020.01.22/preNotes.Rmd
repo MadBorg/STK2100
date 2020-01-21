@@ -1,8 +1,8 @@
 ---
 title: "R Notebook"
 output:
-  pdf_document: default
   html_notebook: default
+  pdf_document: default
 ---
 
 # 2.1
@@ -66,6 +66,16 @@ We need to find a setimator for the unknown variales $\beta_{0}$ and $\beta_{1}$
 The last expressison is showing the matrix notation for representing $y = (y1,...,y_{n})^T; (f(x_{1};\beta),...,f(x_{m};\beta))^T;$.
 
 __But from what we can see in the plot of 'city distance against engine size', a linear model might not be the best.__
+Therefor we might consider a polynomial form, since it is easy and quick. The polynom will look something like:
+\center $f(x;\beta) = \beta_{0} + \beta_{1} x + ... + \beta_{p-1} x^{p-1}$ \center
 
+Because of the simplicity if a polynomial we can wirte f in matrix form with low effort,
+\center $f(x;\beta)= X\beta$ \center
+where x is an n x p matrix, called the design matrix, defined by
+\cnter $X=(1,x,...,x^{p-1})$ \center
+where x is the vector of the observations of the explanatory variable, and the varius columns of X contains powers of order from 0 to p-1 of elements of x.
+
+On the matrix form the solution to the minimaztion problem is
+\center $\hat{\beta} = (X^{T}X)^{-1}X^{T}y$
 
 
