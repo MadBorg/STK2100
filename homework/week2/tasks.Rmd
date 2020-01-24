@@ -1,0 +1,127 @@
+---
+title: "STK2100 Week 2 - Tasks"
+output: html_notebook
+---
+
+```{r echo=FALSE, results='hide'}
+# Getting the data
+auto <- read.table("http://azzalini.stat.unipd.it/Book-DM/auto.dat", header = TRUE)
+summary(auto)
+attach(auto)
+
+# Variables setup 
+# sample size
+n <- nrow(auto)
+# create a dummy variable for fuel: diesel = FALSE, gasoline = TRUE
+d <- fuel == "gas"
+
+plot.engine.size.highway.distance <- function(title){
+  #setting up the plot
+  plot(engine.size, highway.distance, type= "n", main = title, ylab = "Higway distance (km/L)", xlab = "Engine size (L)")
+  #plotting gas points
+  points(engine.size[d], highway.distance[d], col = 4, pch = 1)
+  #plotting diesel points
+  points(engine.size[!d], highway.distance[!d], col = 2, pch = 2)
+  legend('topright', pch = c(1, 2), col = c(4, 2),
+         legend = c("Gasoline  ","Diesel"))
+}
+
+
+```
+
+
+
+## 2.7
+
+### q:
+Fit an appropriate linear model to predict _higway distance_ for car data, in two ways: (a) using the variables described in this chapter; (b) using any variables listed in Appendix B.2
+
+### a:
+
+Showing highway distance vs. engine size:
+
+```{r}
+
+plot.engine.size.highway.distance("No model")
+
+```
+
+__Comment:__
+  
+From the plot it seems to be coorlated in a polynomial, log or 1/y way. But since x > 0 does not make sense we can try the log scale.
+  
+__Simple log linear model:__
+
+
+```{r, echo=F}
+### Figure log model ###
+title = "Log model"
+plot.engine.size.highway.distance(title)
+fit.log = lm(highway.distance ~ log(engine.size) + fuel)
+print(summary(fit.log))
+x = seq(min(engine.size), max(engine.size), length = 200)
+beta = coef(fit.log)
+lines(x, beta[1] + beta[2]*log(x), col = 4, lty = 2)
+lines(x,  beta[1] + beta[2]*log(x) + beta[3], col = 2, lty = 2)
+legend('topright', pch = c(1, 2), col = c(4, 2), legend = c("Gasoline", "Diesel"))
+```
+__2nd Poly linear model:__
+```{r, echo = F}
+title = "2nd Poly linear model"
+plot.engine.size.highway.distance(title)
+fit.poly = lm(highway.distance ~ engine.size + I(engine.size^2) + fuel)
+print(summary(fit.poly))
+x = seq(min(engine.size), max(engine.size), length = 200)
+beta = coef(fit.poly)
+lines(x, beta[1] + beta[2]*x + beta[3]*x^2, col = 4, lty = 2)
+lines(x, beta[1] + beta[2]*x + beta[3]*x^2 + beta[4], col = 2, lty = 2)
+legend('topright', pch = c(1, 2), col = c(4, 2), legend = c("Gasoline", "Diesel"))
+```
+
+
+__Log and 1st poly linear model:__
+
+```{r, echo=F}
+title = "Log.1stPoly.model"
+plot.engine.size.highway.distance(title)
+fit.poly.log = lm(highway.distance ~ engine.size + log(engine.size) + fuel)
+print(summary(fit.poly.log))
+x = seq(min(engine.size), max(engine.size), length = 200)
+beta = coef(fit.poly.log)
+lines(x, beta[1] + beta[2]*x + beta[3]*log(x), col = 4, lty = 2)
+lines(x, beta[1] + beta[2]*x + beta[3]*log(x) + beta[4], col = 2, lty = 2)
+legend('topright', pch = c(1, 2), col = c(4, 2), legend = c("Gasoline", "Diesel"))
+```
+
+__LogLog linear model:__
+```{r, echo=F}
+title = "LogLog.model"
+plot.engine.size.highway.distance(title)
+fit.log.log = lm(log(highway.distance) ~ log(engine.size) + fuel)
+print(summary(fit.log.log))
+x = log(seq(min(engine.size), max(engine.size), length = 200))
+beta = coef(fit.log.log)
+lines(exp(x), exp(beta[1] + beta[2]*x), col = 4, lty = 2)
+lines(exp(x), exp(beta[1] + beta[2]*x + beta[3]), col = 2, lty = 2)
+legend('topright', pch = c(1, 2), col = c(4, 2), legend = c("Gasoline", "Diesel"))
+```
+
+### Comment:
+
+It looks like the LogLog model is the best fitting one, from visual inspection and lokking at the adjusted R-squared. Therefor i chose to look further into this model.
+
+```{r}
+par(mfrow=c(1,2))
+plot(engine.size, resid(fit.log.log), ylab = "residuals", xlab = "enginesize")
+abline(0,0)
+qqnorm(resid(fit.log.log))
+qqline(resid(fit.log.log))
+
+```
+
+Residualplottet er ikke gjenvt fordelt og normalplottet har tung hale, og ikke helt rett senter. Så modellen ser ikke så bra ut.
+
+```{r, echo=F}
+detach(auto)
+```
+
