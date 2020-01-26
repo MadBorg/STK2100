@@ -19,9 +19,9 @@ plot.engine.size.highway.distance <- function(title){
   #setting up the plot
   plot(engine.size, highway.distance, type= "n", main = title, ylab = "Higway distance (km/L)", xlab = "Engine size (L)")
   #plotting gas points
-  points(engine.size[d], highway.distance[d], col = 4, pch = 1)
+  points(engine.size[d], highway.distance[d])
   #plotting diesel points
-  points(engine.size[!d], highway.distance[!d], col = 2, pch = 2)
+  points(engine.size[!d], highway.distance[!d])
   legend('topright', pch = c(1, 2), col = c(4, 2),
          legend = c("Gasoline  ","Diesel"))
 }
@@ -36,7 +36,7 @@ plot.engine.size.highway.distance <- function(title){
 ### q:
 Fit an appropriate linear model to predict _higway distance_ for car data, in two ways: (a) using the variables described in this chapter; (b) using any variables listed in Appendix B.2
 
-### a:
+### a (a):
 
 Showing highway distance vs. engine size:
 
@@ -120,6 +120,52 @@ qqline(resid(fit.log.log))
 ```
 
 Residualplottet er ikke gjenvt fordelt og normalplottet har tung hale, og ikke helt rett senter. Så modellen ser ikke så bra ut.
+
+### a (b):
+
+```{r, echo=F}
+plot.higway.distance.curb.weight <- function(title) {
+  #setting up the plot
+  plot(curb.weight, highway.distance, type= "n", main = title, ylab = "Higway distance (km/L)", xlab = "curb.weight (kg)")
+  #plotting gas points
+  points(curb.weight[d], highway.distance[d], col = 4, pch = 1)
+  #plotting diesel points
+  points(curb.weight[!d], highway.distance[!d], col = 2, pch = 2)
+  legend('topright', pch = c(1, 2), col = c(4, 2),
+         legend = c("Gasoline  ","Diesel"))
+}
+
+```
+
+__Trying curb.weight to explain higway.distance__
+
+```{r}
+#plot
+title = "linear linear model"
+#setting up the plot
+plot(curb.weight, highway.distance, type= "n", main = title, ylab = "Higway distance (km/L)", xlab = "curb.weight (kg)")
+#plotting gas points
+points(curb.weight[d], highway.distance[d], col = 4, pch = 1)
+#plotting diesel points
+points(curb.weight[!d], highway.distance[!d], col = 2, pch = 2)
+legend('topright', pch = c(1, 2), col = c(4, 2),
+       legend = c("Gasoline  ","Diesel"))
+
+# lm
+fit.lin.lin = lm(highway.distance ~ curb.weight + fuel)
+print(summary(fit.lin.lin))
+
+#adding data to plot
+x = seq(min(engine.size), max(engine.size), length = 200)
+beta = coef(fit.lin.lin)
+lines(x, beta[1] + beta[2]*x, col = 4, lty = 2)
+lines(x, beta[1] + beta[2]*x + beta[3], col = 2, lty = 2)
+legend('topright', pch = c(1, 2), col = c(4, 2), legend = c("Gasoline", "Diesel"))
+
+```
+
+
+
 
 ```{r, echo=F}
 detach(auto)
