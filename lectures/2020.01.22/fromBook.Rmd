@@ -79,20 +79,37 @@ On the matrix form the solution to the minimaztion problem is
 \center $\hat{\beta} = (X^{T}X)^{-1}X^{T}y$
 
 
-## 2.2 Computational Aspects
 
-When we have alot of data the computation starts becomming important to think about. And the main part of the calculation we need to look at is the function
+### 2.1.3 Multivariable Responses
 
-\center $\hat{\beta} = (X^{T}*X)^{-1} X^{T} y$ \center (2.7)
+In many cases we would like more than one responsvariable. In the car example we for example would like higway and city distance to be out responsvariables. 
 
-### 2.2.1 Least Squares estimation by Successie Orthogonalization
+If we create q response variables, we can construct a matrix Y such that the columns that contain the q variables. In pur example we have q = 2, and then 
 
-Most solutions based on least squares problems (2.7) are mostly based on the inversion of the matrix $(X^{T}X)$. However a matrix can only be inverted only if all its rows and coloums are lineary independent. The Gram-Schmidt algorithm transformes gives a new formulation of X with orthogonal columns, so that the inverse of $(X^{T}X)$ can be quickly be calculated.
-The algorithm might be considered in matrix form by considering the QR decomposition of X as the product of an n x p orthogonal matrix Q, usually normalized so that $Q^{T}Q = I$, and p x p, upper trianglular matrix R. The last square solution is therefor
+\center $Y = ((CityDistance), (HighwayDistance))$. \center
 
-\center $\hat{\beta} = R^{-1}Q^{T}y$ and $\hat{y} = QQ^{T}y$
+If we create q models of linear regression, each of the type seen when we only had one response, using the same regression matrix X for each, we obtain
 
-where it is easy to get the inversion of R since it is an upper triangular matrix.
+\center $Y = XB + E$ \center \hfill    (2.20)
+
+where B us the matrix formed of __q__ columns of dimention __p__, each representing the regression parameters for the corresponding column of Y, and matrix R is made up of error terms. Here aswell each of its columns reffers to the corresponding column of Y, with condition that
+
+\center $var[\tilde{E}_{i}] = \Sigma$ \center
+
+where $\tilde{E}_{i}^{T}$ represent the i'th row E, for i = 1, ... , n, and $\Sigma$ is a variance matrix of dimention q x q independent of i, wich expresses the correlation structure between the error components and therefor also between the response variables. Equation (2.20) constitutes a model of _'multivariate multiple linear regression'_, where 'multivariate' refers to the fact that we have multiple (q) response variables, and 'multiple' means we have multiple (p) explanetory varialbes.
+
+The natural extention of the least square criterion will be similar to the one not multivariate. But with q response variables. This gives the model
+
+\center $\hat{B} = (X^{T}X)^{-1} x^{T} Y$ \center \hfill (2.21)
+
+which is just the juxtaposition of q vectors estimated for each response variable.
+
+
+## Likelihood
+
+### 2.3.1 General Concepts
+
+
 
 
 

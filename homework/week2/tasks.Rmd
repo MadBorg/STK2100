@@ -166,8 +166,65 @@ legend('topright', pch = c(1, 2), col = c(4, 2), legend = c("Gasoline", "Diesel"
 
 
 
-
 ```{r, echo=F}
 detach(auto)
 ```
 
+
+# From ISLR
+
+```{r, echo = F}
+library(ISLR)
+attach(Auto)
+```
+
+
+## 3.9 
+
+This question involves the use of multiple linear regression on the
+Auto data set.
+
+### (a) Produce a scatterplot matrix which includes all of the variables in the data set.
+
+```{r}
+plot(Auto)
+
+```
+
+### (b) Compute the matrix of correlations between the variables using the function cor(). You will need to exclude the name variable, which is qualitative
+
+
+
+```{r}
+exclude = names(Auto) %in% c("name")
+cor(Auto[!exclude])
+
+```
+
+### (c) Use the lm() function to perform a multiple linear regression with mpg as the response and all other variables except name as the predictors. Use the summary() function to print the results. Comment on the output. For instance:
+
+```{r}
+fit = lm(mpg ~ ., data=Auto[!exclude])
+fit.sum = summary(fit)
+fit.sum
+
+```
+
+i. Is there a relationship between the predictors and the response?
+    * There seems to be a good relationship between the predictors and responce, lokking at R-squared, and a p-value wich is essentially zero
+ii. Which predictors appear to have a statistically significant relationship to the response?
+    * All the predictors with stars. 
+iii. What does the coefficient for the year variable suggest?
+    * ?
+    
+### (d) Use the plot() function to produce diagnostic plots of the linear regression fit. Comment on any problems you see with the fit. Do the residual plots suggest any unusually large outliers? Does the leverage plot identify any observations with unusually high leverage?
+
+```{r}
+plot(fit)
+```
+
+#### Residuals vs Fitted
+
+(3.3.3.1): Non-linearity. Residual plot is used for identifying non-linearity. The red line is a smooth if to the residuals. A strong pattern in this plot will indicate non-linearity in the data, and opposite. where we can see a small pattern but not to strong. So we can say it's a pass.
+
+#### 
