@@ -1,8 +1,8 @@
 ---
 title: "R Notebook"
 output:
-  html_notebook: default
   pdf_document: default
+  html_notebook: default
 ---
 
 # 2.1
@@ -77,5 +77,22 @@ where x is the vector of the observations of the explanatory variable, and the v
 
 On the matrix form the solution to the minimaztion problem is
 \center $\hat{\beta} = (X^{T}X)^{-1}X^{T}y$
+
+
+## 2.2 Computational Aspects
+
+When we have alot of data the computation starts becomming important to think about. And the main part of the calculation we need to look at is the function
+
+\center $\hat{\beta} = (X^{T}*X)^{-1} X^{T} y$ \center (2.7)
+
+### 2.2.1 Least Squares estimation by Successie Orthogonalization
+
+Most solutions based on least squares problems (2.7) are mostly based on the inversion of the matrix $(X^{T}X)$. However a matrix can only be inverted only if all its rows and coloums are lineary independent. The Gram-Schmidt algorithm transformes gives a new formulation of X with orthogonal columns, so that the inverse of $(X^{T}X)$ can be quickly be calculated.
+The algorithm might be considered in matrix form by considering the QR decomposition of X as the product of an n x p orthogonal matrix Q, usually normalized so that $Q^{T}Q = I$, and p x p, upper trianglular matrix R. The last square solution is therefor
+
+\center $\hat{\beta} = R^{-1}Q^{T}y$ and $\hat{y} = QQ^{T}y$
+
+where it is easy to get the inversion of R since it is an upper triangular matrix.
+
 
 
