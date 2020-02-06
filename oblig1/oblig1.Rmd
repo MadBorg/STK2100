@@ -1,0 +1,64 @@
+---
+title: "Oblig 1"
+output: html_notebook
+---
+
+## Problem 1
+
+
+```{r, echo = F}
+# Getting data
+library(readr)
+res_bodyfat <- read_csv("res_bodyfat/res_bodyfat.csv")
+attach(res_bodyfat)
+```
+
+Aim: Find how well bmi, easily computed as the ratio between weight and squared hight (so mesured in kg/m^2), can be used to predict pbfm, whose measurment involves instead a bioelectrical impedance analysis.
+
+### a
+
+Plotting __bnp__ against __pbfm__, and fitting a simple linear model with a summary.
+
+```{r}
+plot(bmi, pbfm)
+fit.simpleLinear <- lm(pbfm ~ bmi)
+print(summary(fit.simpleLinear))
+x = (seq(min(bmi), max(bmi), length = 200))
+beta = coef(fit.simpleLinear)
+lines(x, beta[1] + beta[2]* x, col = 2, lty = 1, lwd = 2)
+```
+A linear model seems ok in the center of the bmi. But it is quite off in the lower 1/4 and in the upper 1/4.We can see that the intercept and bmi is strongly significant, indicating a strong correlation between bmi and pdfm. The R-squared is siginificant, but not super high, so the model can probably be improved. To see this clearly we plott indicitative plotts on the fitness.
+
+```{r}
+plot(fit.simpleLinear)
+
+```
+
+#### Residuals vs Fitted
+
+Shows the Anscombe plot, wich would idealy present a eaven scattering with no patterns in the points. In the plott we see a clear pattern, and is indicating possiple violation of homoscedasicity. Meaning that \epsiplon must be independent of the index.
+
+#### Normal Q-Q
+
+This plot shows quantile-quantile plot. This plot shows the values of the resiuals in increasing order. To see if the residuals folows a normal distribution. For the assumption of normality to be valid we would expect the values to folow the line in the plot. In the plot a heavy tail and head can be observed. So the assumtion of normality is not strong.
+
+#### Scale-Location
+
+#### Residual vs Leverage
+
+## b
+
+We can see that we dont have any negative number, in such cases it is often benefital to use a logarithmic transformation.
+
+```{r}
+plot(bmi, pbfm)
+fit.log <- lm(pbfm ~ log(bmi))
+print(summary(fit.log))
+x = (seq(min(bmi), max(bmi), length = 200))
+beta = coef(fit.log)
+lines(x, beta[1] + log(beta[2]* x), col = 1, lty = 2, lwd = 2)
+
+```
+
+
+
