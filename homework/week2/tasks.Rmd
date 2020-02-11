@@ -227,4 +227,7 @@ plot(fit)
 
 (3.3.3.1): Non-linearity. Residual plot is used for identifying non-linearity. The red line is a smooth if to the residuals. A strong pattern in this plot will indicate non-linearity in the data, and opposite. where we can see a small pattern but not to strong. So we can say it's a pass.
 
-#### 
+#### Other comments
+We do see some problem with the points 327, 394 in the leverage plot and 323, 327, and 326 in the residual plot. Thise points dont seem to be explained good by the model, wich probabli implies that we lack some relevant data, or that the model culd be improved.
+
+###

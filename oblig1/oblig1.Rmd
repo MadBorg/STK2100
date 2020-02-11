@@ -1,6 +1,8 @@
 ---
 title: "Oblig 1"
-output: html_notebook
+output:
+  html_notebook: default
+  pdf_document: default
 ---
 
 ## Problem 1
@@ -8,8 +10,7 @@ output: html_notebook
 
 ```{r, echo = F}
 # Getting data
-library(readr)
-res_bodyfat <- read_csv("res_bodyfat/res_bodyfat.csv")
+res_bodyfat <- read.csv("res_bodyfat/res_bodyfat.csv")
 attach(res_bodyfat)
 ```
 
@@ -51,14 +52,39 @@ This plot shows quantile-quantile plot. This plot shows the values of the resiua
 We can see that we dont have any negative number, in such cases it is often benefital to use a logarithmic transformation.
 
 ```{r}
-plot(bmi, pbfm)
+
 fit.log <- lm(pbfm ~ log(bmi))
 print(summary(fit.log))
-x = (seq(min(bmi), max(bmi), length = 200))
 beta = coef(fit.log)
-lines(x, beta[1] + log(beta[2]* x), col = 1, lty = 2, lwd = 2)
+
+x = log(seq(min(bmi), max(bmi), length = 200))
+plot(bmi, pbfm)
+lines(exp(x),( beta[1] + beta[2]* x), col = 2) 
 
 ```
 
+And to see how good the model is we plot some helping plots
 
+```{r}
+plot(fit.log)
+```
+
+
+It was also suggested to use a quadratic model.
+
+```{r}
+fit.quad<- lm(pbfm ~ bmi + I(bmi^2))
+print(summary(fit.quad))
+beta = coef(fit.quad)
+
+x = (seq(min(bmi), max(bmi), length = 200))
+plot(bmi, pbfm)
+#points(bmi, pbfm)
+lines(x, beta[1] + beta[2]*x + beta[3]*x^2, col=2)
+```
+And the acopening helping plots
+
+```{r}
+plot(fit.quad)
+```
 
