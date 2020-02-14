@@ -93,11 +93,30 @@ plot(fit.quad)
 
 ```{r}
 max.p = 10
-n = 4
+n = 4 # n = len bmi
+shuffled = sample(1:length(bmi))
+subset.size = length(bmi) %/% n
+indices<-matrix(list(), nrow=n, ncol=1)
+# indices[[1,1]] = shuffled[1:subset.size]
+# indices[[2,1]] = shuffled[subset.size +1:subset.size*2]
+# indices[[3,1]] = shuffled[(subset.size*2 + 1):subset.size*3]
+# indices[[4,1]] = shuffled[(subset.size*3 + 1):length(bmi)]
+
+for(i in 0:n-1){
+  a = (subset.size*i) + 1
+  b =  subset.size*(i+1)
+  print(c(a,b))
+  indices[[i+1,1]] = shuffled[(subset.size*i) + 1 : subset.size*(i+1)]
+}
+
+
 
 for (i in 1:max.p){
-  for(j in 1:n){
-    
+  for(j in 0:n){
+      x = bmi[c(indices[[j %% n]], indices[[(j+1) %% n]], indices[[(j+2) %% n]])]
+      y = pbfm[c(indices[[j %% n]], indices[[(j+1) %% n]], indices[[(j+2) %% n]])]
+      fit = lm(pbfm ~ poly(x, i), x = TRUE)
+      x.test = bmi[]
   }
 }
 ```
