@@ -106,7 +106,7 @@ for(i in 0:n-1){
   a = (subset.size*i) + 1
   b =  subset.size*(i+1)
   print(c(a,b))
-  indices[[i+1,1]] = shuffled[(subset.size*i) + 1 : subset.size*(i+1)]
+  indices[[i+1,1]] = shuffled[a : b]
 }
 
 
@@ -120,5 +120,51 @@ for (i in 1:max.p){
   }
 }
 ```
+
+## Problem 2
+
+```{r, echo = F}
+oral_ca <- read.csv("oral_ca/oral_ca.csv")
+attach(oral_ca)
+print(summary(oral_ca))
+```
+Aim of the study was to evaluate the risk of Oral cancer based on the variables __drinks__ (number og 1oz ethanol-equivalent drinks consumed per week), __sex__, __age__ and __cigs__ (number of cigaretts smoked per day).
+
+### We are firs interested in the effect of smoking alone
+
+#### (a)
+
+Q: Dichotomize the variable cigs in two categories, smokers and not smokers, and create a table with the observed frequencies for cases and controls. In addition, provide the estimated probabilities (including their standard errors) of experiencing an oral cancer (i.e., being a case) for the two sub-populations.
+
+A:
+```{r}
+N = nrow(oral_ca)
+smokers = subset( oral_ca, oral_ca$cigs > 0 )#smokers = oral_ca[ oral_ca$cigs > 0]
+nonSmokers = subset(oral_ca, oral_ca$cigs == 0) #  nonSmokers = oral_ca[ oral_ca$cigs == 0 ]
+number.of.cc = nrow( subset(oral_ca,oral_ca$ccstatus == 1) )
+number.of.cc.smokers = nrow( subset(oral_ca, oral_ca$ccstatus == 1 & oral_ca$cigs > 0) )
+number.of.cc.nonSmokers = nrow(subset(oral_ca, oral_ca$ccstatus == 1 & oral_ca$cigs == 0) )
+number.of.somkers = nrow( subset( oral_ca, oral_ca$cigs > 0) )
+number.of.nonSmokers = nrow( subset( oral_ca, oral_ca$cigs == 0 ))
+
+# Binomial - Mean
+estProb = number.of.cc / N # Number of ppl with cancer devided on ppl (people in the query )
+estProbSmoker = number.of.cc.smoker / number.of.somkers # Number of ppl with cancer and smokes, devided on number of ppl who smokes.
+estProbNonSmoker = number.of.cc.nonSmoker / number.of.nonSmokers# Number of ppl with cancer and does not smoke, devided on number of ppl who does not soke.
+
+# Binomial Vairance - Var(X) = n*p*(1-p)
+estVar = N * estProb * (1 - estProb)
+estVarSmoker = number.of.somkers * estProbSmoker * (1 - estProbSmoker)
+estVarNonSmoker = number.of.nonSmokers * estProbNonSmoker * (1 - estProbNonSmoker)
+
+cc.smoke.df = data.frame( colnames("General", "Smoker", "Non Smoker")
+)
+```
+
+
+
+
+
+
 
 
