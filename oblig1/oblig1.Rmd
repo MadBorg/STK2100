@@ -157,7 +157,7 @@ estVar = N * estProb * (1 - estProb)
 estVarSmoker = number.of.somkers * estProbSmoker * (1 - estProbSmoker)
 estVarNonSmoker = number.of.nonSmokers * estProbNonSmoker * (1 - estProbNonSmoker)
 
-cc.smoke.df = data.frame( colnames("General", "Smoker", "Non Smoker")
+cc.smoke.df = data.frame( colnames = "General", "Smoker", "Non Smoker"),
 )
 ```
 
