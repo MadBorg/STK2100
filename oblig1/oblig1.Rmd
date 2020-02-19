@@ -141,31 +141,30 @@ Dichotomize the variable cigs in two categories, smokers and not smokers, and cr
 A:
 ```{r}
 N = nrow(oral_ca)
+smoker.nonSmoker = cigs == 0
 smokers = subset( oral_ca, oral_ca$cigs > 0 )#smokers = oral_ca[ oral_ca$cigs > 0]
 nonSmokers = subset(oral_ca, oral_ca$cigs == 0) #  nonSmokers = oral_ca[ oral_ca$cigs == 0 ]
 number.of.cc = nrow( subset(oral_ca,oral_ca$ccstatus == 1) )
 number.of.cc.smokers = nrow( subset(oral_ca, oral_ca$ccstatus == 1 & oral_ca$cigs > 0) )
 number.of.cc.nonSmokers = nrow(subset(oral_ca, oral_ca$ccstatus == 1 & oral_ca$cigs == 0) )
-number.of.somkers = nrow( subset( oral_ca, oral_ca$cigs > 0) )
-number.of.nonSmokers = nrow( subset( oral_ca, oral_ca$cigs == 0 ))
+n.smoker = nrow( subset( oral_ca, oral_ca$cigs > 0) )
+n.nonSmoker = nrow( subset( oral_ca, oral_ca$cigs == 0 ))
 
 # Binomial - Mean
-estProb = number.of.cc / N # Number of ppl with cancer devided on ppl (people in the query )
-estProbSmoker = number.of.cc.smokers / number.of.somkers # Number of ppl with cancer and smokes, devided on number of ppl who smokes.
-estProbNonSmoker = number.of.cc.nonSmokers / number.of.nonSmokers# Number of ppl with cancer and does not smoke, devided on number of ppl who does not soke.
+pi.common.hat = number.of.cc / N # Number of ppl with cancer devided on ppl (people in the query )
+pi.smoker.hat = number.of.cc.smokers / n.smoker # Number of ppl with cancer and smokes, devided on number of ppl who smokes.
+pi.nonSmoker.hat = number.of.cc.nonSmokers / n.nonSmoker# Number of ppl with cancer and does not smoke, devided on number of ppl who does not soke.
 
 # Binomial Vairance - Var(X) = n*p*(1-p)
-estVar = N * estProb * (1 - estProb)
-estVarSmoker = number.of.somkers * estProbSmoker * (1 - estProbSmoker)
-estVarNonSmoker = number.of.nonSmokers * estProbNonSmoker * (1 - estProbNonSmoker)
+se.pi.common = sqrt(pi.common.hat * (1 - pi.common.hat) / n)
+se.pi.smoker = sqrt(pi.smoker.hat * (1 - pi.nonSmoker.hat) /n.smoker)
+se.pi.nonSmoker = sqrt(pi.nonSmoker.hat * (1 - pi.nonSmoker.hat) /n.nonSmoker)
 
 cc.smoke.df  = data.frame( 
-  Prob = c(estProb, estProbSmoker, estProbNonSmoker), 
-  Var = c(estVar, estVarSmoker, estVarNonSmoker),
+  pi = c(pi.common.hat, pi.smoker.hat, pi.nonSmoker.hat), 
+  se = c(se.pi.common, se.pi.smoker, se.pi.nonSmoker),
   row.names = c("General", "Smoker", "NonSmoker")
   )
-cc.smoke.df = data.frame( colnames = "General", "Smoker", "Non Smoker"),
-)
 ```
 
 #### (b)
@@ -176,30 +175,19 @@ Test the hypothesis that the two probabilities are equal and comment on the resu
 
 A:
 
-Hypothesis: H0: probSmokers == probNonSmokers against H1: probSmokers != probNonSmokers
+Hypothesis: H0: probSmokers == probNonSmokers against H1: probSmokers != probNonSmokers. Computing the p-value
 
 ```{r}
-alfa = 0.05
-n1 = number.of.somkers
-n2 = number.of.nonSmokers
-s1.squared = estVarSmoker
-s2.squared = estVarNonSmoker
-x1.mean = estProbSmoker
-x2.mean = estProbNonSmoker
-mu = 0
+# compute the likelihood ratio statistics test
+llik_pi.smoker.hat_pi.nonSmoker.hat = sum(dbinom(smoker.nonSmoker[ smoker.nonSmoker == TRUE], 1, pi.smoker.hat, log = TRUE)) + 
+                                      sum(dbinom(smoker.nonSmoker[ smoker.nonSmoker == FALSE], 1, pi.nonSmoker.hat, log = TRUE))
+llik_pi.common.hat = sum(dbinom(smoker.nonSmoker, 1, pi.common.hat, log=TRUE))
 
-S.squared = ((n1 -1)*s1.squared + (n2 -1)*s2.squared) / (N -2)
-t.obs = ( ( x1.mean - x2.mean ) - abs(mu) ) / sqrt( S.squared * (1/n1 + 1/n2) )
-t = c(qt(alfa/2, N), qt(1-(alfa/2), N))
-print("t.obs: ")
-print(t.obs)
-print("t: ")
-print(t)
-
-
+w = 2 * (llik_pi.smoker.hat_pi.nonSmoker.hat - llik_pi.common.hat)
+p.val = 1 - pchisq(w, df = 1)
 ```
 
-We can see that t.obs is well within the borders of t within alfa so we can't say that there is a difference between probSmokers and probNonSmokers, with this test.
+We can se that the p-val is zero, so we can drop H0.
 
 #### (c)
 
@@ -211,53 +199,76 @@ A:
 
 ```{r}
 
-y = oral_ca$ccstatus
+y = oral_ca$ccstatus == 1
 x = oral_ca$cigs > 0
 
-fit = glm(y ~ x, family = "binomial")
+mod = glm(y ~ x, family = 'binomial')
+print(summary(mod))
+beta = mod$coefficients
+print(beta)
 
+pi.nonSmoker = exp(beta[1]) / (1 + exp(beta[1]))
+pi.smoker = exp(beta[1] + beta[2]) / (1 + exp(beta[1] + beta[2]))
 
+#odds
+odds.nonSmoker = pi.nonSmoker.hat / (1 - pi.nonSmoker.hat)
+odds.smoker = pi.smoker.hat / (1 - pi.smoker.hat)
+#log odds ratio
+log.odds.ratio = (odds.smoker / odds.nonSmoker)
 
-### figure 2.12 (left) ###
-# age.c for age continuous
-age.c <- bank$age
-n_age <- apply(table(y, age.c), 2, sum)
-y_age <- as.numeric(table(y, age.c)[2,] / n_age)
-plot(sort(unique(age.c)), y_age, ylim = c(0.5, 1), xlim = c(15, 70),
-     ylab = "Pr[ Y = high | age ]", xlab = "age", pch = 16, cex = 2)
+log.odds.ratio
+```
 
+We see that the odds of cc for a smoker against a non somoker is aprox 4, aka. 4 to 1.
 
-# fit the model with age as a continuous variable
-# with a quadratic effect
-mod_tab25up <- glm(y ~ age.c + I(age.c^2), family = 'binomial')
-summary(mod_tab25up)
+#### (d)
 
-# without a quadratic effect
-mod_tab25down <- glm(y ~ age.c, family = 'binomial')
-summary(mod_tab25down)
+Q:
 
-# difference in deviance
-diff_deviance <- mod_tab25down$deviance - mod_tab25up$deviance
-1 - pchisq(q = diff_deviance, df = 3 - 2) # not significative at level 0.05
+Repeat the analysis of point (c) by considering, now, the number of cigarettes as a continuous variable. Comment on the result: What does the regression coefficient for this variable mean now? Why does the value of the intercept change with respect to point (c), although they are both related to the odds for non-smokers?
 
-### figure 2.12 (b) ###
-plot(sort(unique(age.c)), y_age, ylim = c(0.5, 1), xlim = c(15, 70),
-     ylab = "Pr[ Y = high | age ]", xlab = "age", pch = 16, cex = sqrt(n_age)/2)
-lines(x, predict(mod_tab25down, newdata = data.frame(age.c = x), type = "response"),
-      col = 2, lty = 1, lwd = 3)
-lines(x, predict(mod_tab25up, newdata = data.frame(age.c = x), type = "response"),
-      col = 4, lty = 2, lwd = 3)
-legend('bottomright', legend = c("Linear model", "Quadratic model"),
-       lty = c(1, 2), col = c(2, 4), cex = 2, lwd = 3)
+A:
+
+```{r}
+x = cigs
+y = ccstatus
+mod.continuous = glm(y ~ x, family = 'binomial')
+print(summary(mod.continuous))
+
 
 ```
 
+The regression coefficient now tells us the increase in odds of cancer per cigarets smoked per day. The intercept is changed since smoking one sigaret per day is closer to zero than smoking 20. In the non continius model the biggest smoker and the rest is given the same odds.
 
+### Consider now the other three variables (drinks, sex and age) as well:
 
+#### (e)
 
+Q: 
 
+Fit a linear logistic model including all the explanatory variables and report the result. What is the increase in terms of log-odds for an increasing number of cigarettes per day smoked estimated by this model? Why did it change from the one obtained in model ﬁtted in point (c)? 
 
+```{r}
+mod.all = glm(y ~  oral_ca$drinks + oral_ca$cigs + oral_ca$age + oral_ca$sex, family = 'binomial')
+print(summary(mod.all))
+```
 
+The increase in terms of log-odds for an increasing number of cigaretts par day by this model is 0.035, wich is a little lower than in the prewius model. This can be because of some of the affects of other facors was tried explained by one facotr. Now we have other factors to explain this change. Wich will change the value.
+
+#### (e)
+
+```{r}
+mod.without.Age = glm(y ~  oral_ca$drinks + oral_ca$cigs + oral_ca$sex, family = 'binomial')
+print(summary(mod.without.Age))
+```
+
+Since the explanatory variable age has a large p-value can we not say it gives significant value to the model. So it does not seem like there is a difference in age. Lookin at the deviance the age variable did noting significant for the model ether. So i would choose the one with less explanatory variables, aka the one without Age
+
+#### (g)
+
+Q:
+
+Use a polynomial of degree 2 to model the effect of drinks. Does it improve the model?
 
 
 
