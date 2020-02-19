@@ -164,6 +164,8 @@ cc.smoke.df  = data.frame(
   Var = c(estVar, estVarSmoker, estVarNonSmoker),
   row.names = c("General", "Smoker", "NonSmoker")
   )
+cc.smoke.df = data.frame( colnames = "General", "Smoker", "Non Smoker"),
+)
 ```
 
 #### (b)
