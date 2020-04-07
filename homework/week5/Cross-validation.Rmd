@@ -1,0 +1,140 @@
+---
+title: "5.3 Lab: Cross-Validation and the Bootstrap"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+We want to explore resampling techniques.
+
+## 5.3.1 The Validation Set Approach
+
+We want to use the validation set approach to estimate the test error rates that result from fitting different linear models on the __Auto__ data.
+
+For setup we need to use the __set.seed()__ func to make things reproducible. This is usually a good idea working with RNG's. We are using the __sample()__ function for to split up our data into halves. Wich meens a subset size of 196 out of the 392 observations. We will refere to these as the trainingset.
+
+```{r}
+library(ISLR)
+set.seed(1)
+train = sample(392, 196)
+```
+
+Then we use the __subset__ option in __lm()__ to fit a linear regression only using the training set.
+
+```{r}
+lm.fit = lm(mpg~horsepower, data=Auto, subset = train)
+```
+
+We then use the __predict()__ function to estimate the response for all 392 observatons, and use the __mean()__ function to calculate the MSE of the 196 observations in the validation set. Note: __-train__ index selects only the observations that are not in the trainingset.
+
+```{r}
+attach(Auto)
+mean((mpg -predict(lm.fit ,Auto))[-train ]^2)
+```
+
+As we can see the estimated MSE for the linear regression fit is 23.27 (26.14 from the book). To estimate the test error for the quadratic and cubic regressions we can use __poly()__.
+
+```{r}
+lm.fit2 = lm(mpg~poly(horsepower, 2), data=Auto, subset=train)
+mean((mpg -predict(lm.fit2,Auto))[-train]^2)
+lm.fit3 = lm(mpg~poly(horsepower, 3), data = Auto, subset=train)
+mean((mpg -predict(lm.fit3,Auto))[-train]^2)
+```
+
+The error rates are 18.72 (19.78) and 18.79 (19.78). If we choose a different training set we will get slighty different errrors on the validation set.
+
+```{r}
+set.seed(2)
+train = sample(392, 196)
+lm.fit = lm(mpg~horsepower, subset = train)
+mean((mpg -predict(lm.fit ,Auto))[-train ]^2)
+lm.fit2=lm(mpg~poly(horsepower,2),data=Auto,subset=train)
+mean((mpg -predict(lm.fit2,Auto))[-train]^2)
+lm.fit3=lm(mpg~poly(horsepower,3),data=Auto,subset=train)
+mean((mpg -predict(lm.fit3,Auto))[-train]^2) 
+```
+
+Using this training and validation set we get the resoult's 25.72, 20.43, 20.39 (23.30, 18.90, and 19.2). Wich is different but similar. This resoult is consisten with our previus findings: a model that predicts __mpg__ using a quadratic function of __horsepower__, and there is little evidenc in favor of a model that uses cubic function of __horsepower__.
+
+## 5.3.2 Leave-one-out Cross-Validation (LOOCV)
+
+The LOOCV estimate can be automatically computed for any generalized linear model using the __glm()__ and __cv.glm()__ functions. If we use __glm()__ without a specified family it will do the same as the __lm()__ function. But we need the __glm()__, eaven tho we are going to do a normal linear model, since __glm()__ works with __cv.glm()__, wich is a part of the boot libarary.
+
+```{r}
+library(boot)
+glm.fit = glm(mpg~horsepower, data=Auto)
+cv.err = cv.glm(Auto, glm.fit)
+cv.err$delta
+```
+
+The __cv.glm()__ function makes a list with several components. The two numbers in the __delta_ vector contain the cross-validation results. In this case the numbers are equvivalent. Our Cross-validation estimate for the test erro is aprroximatley 24.23.
+
+We can do this procedure for increasingly complex polynomial fits. To automate the process, we use the __for()__ function to initiate a _for_ loop which iteratively fits polynomial regressions for polynomials of order i=1 to i=5, computed associated cross-validation error, and stores it in the _ith_ element of the vecotr __cv.error__. We start by initializing the vector. This commad will likely take a couple of minutes to run.
+
+```{r}
+cv.error = rep(0,5)
+for (i in 1:5){
+  glm.fit = glm(mpg~poly(horsepower, i), data=Auto)
+  cv.error[i] = cv.glm(Auto, glm.fit)$delta[1]
+}
+cv.error
+```
+
+As mentioned earlier (in the book fig 5.4) we observe a sharp drop in MSE from linear to quadratic, but no improvment going further.
+
+## 5.3.3 k-fold Cross-Validation
+
+The __cv.glm()__ function can also be used to implement k-fold CV. We will use an example with k=10, a common choice for k, on the Auto data set. We still use the seed method and initialize a vector which we will store the CV errors corresponding to the polynomial fits of orders one to ten.
+
+```{r}
+set.seed(17)
+cv.error.10 =rep(0,10)
+for (i in 1:10){ 
+  glm.fit= glm(mpg~poly(horsepower,i),data=Auto) 
+  cv.error.10[i]=cv.glm(Auto ,glm.fit ,K=10)$delta [1]
+}
+cv.error.10
+```
+
+We still see that there is little evidence that using cubic or higher-order polynomial terms leads to lower test error than simply using a quadratic fit.
+
+## 5.3.4 The Bootstrap
+
+We illustrate the use of the bootstrap in the simple example of Section 5.2 (from the book)as well as on an example involving estimating the accuracy of the linear regression model on the __Auto__ data set.
+
+### Estimating the Accuracy of a Statistic of Interest
+
+One of the great advantages of the boostrap approach is that it can be applied in almost all situations. No complicated mathematical calulations are required. Performing bootstrap analysis in __R__ only need two steps. __First__, we must create a function, that computes the statistic of interest. __Second__, we use the __boot()__ function, wich is part of the boot libarary, to perform the bootstrap by repeatedly sampling observations from the data set with replacement.
+
+The __Portfolio__ data set in the __ISLR__ package is described in Section 5.2. To ilustrate the use of bootstrap on this data, we must first create a function, __alpha.fn()__, wich takes (X, Y) as input data, as well as a vector indicating which observations should be used to estimate $\alpha$. The function then returns the estimate for $\alpha$ based on the selected observations.
+
+```{r}
+alpha.fn = function(data, index){
+  X = data$X[index]
+  Y = data$Y[index]
+  return((var(Y)-cov(X,Y))/(var(X)+var(Y) -2*cov(X,Y))) 
+}
+```
+
+This function _returns_, an estimate for $\alpha$ based on applying (5.7 book) to the observations indexed by the argument __index__. For instance, the following command tells __R__ To estimate $\alpha$ using 100 observations.
+
+```{r}
+set.seed(2)
+alpha.fn(Portfolio, sample(100, 100, replace = T))
+```
+
+We can implement a boostrap analysis by performing this command many times, recording all of the corresponding estimates for $\alpha$, and computing the standard deviation. But the __boot()__ function automates this approach. Below we produce R = 1,000 bootstrap estimates for $\alpha$.
+
+```{r}
+boot(Portfolio, alpha.fn, R=1000)
+```
+
+The final output shows that using the original data, $\hat{\alpha} = 0.5758$, and that the bootstrap estimate for SE($\alpha$) is 0.0930 (0.866 book).
+
+   
+

@@ -1,14 +1,23 @@
 ---
-title: "Oblig 1"
+title: "Oblig 1, Sanders"
 output:
+  word_document: default
   html_notebook: default
   pdf_document: default
+  html_document:
+    df_print: paged
 ---
+
+
+## Komment
+
+Since we did not have lectures in crossvalidation, a persion aksed the teacher what we shuld do with thise tasks, and the teachers answer was that we will not need to do them. So this is my solution for the oblig, where I have not compleated what was needed from the dalayed lecture. If it is not approved I will do the tasks.
+
 
 ## Problem 1
 
 
-```{r, echo = F}
+```{r}
 # Getting data
 res_bodyfat <- read.csv("res_bodyfat/res_bodyfat.csv")
 attach(res_bodyfat)
@@ -91,39 +100,38 @@ plot(fit.quad)
 
 ## C - Leave-p-out cross-validation (https://en.wikipedia.org/wiki/Cross-validation_(statistics))
 
-```{r}
-max.p = 10
-n = 4 # n = len bmi
-shuffled = sample(1:length(bmi))
-subset.size = length(bmi) %/% n
-indices<-matrix(list(), nrow=n, ncol=1)
+
+#max.p = 10
+#n = 4 # n = len bmi
+#shuffled = sample(1:length(bmi))
+#subset.size = length(bmi) %/% n
+#indices<-matrix(list(), nrow=n, ncol=1)
 # indices[[1,1]] = shuffled[1:subset.size]
 # indices[[2,1]] = shuffled[subset.size +1:subset.size*2]
 # indices[[3,1]] = shuffled[(subset.size*2 + 1):subset.size*3]
 # indices[[4,1]] = shuffled[(subset.size*3 + 1):length(bmi)]
 
-for(i in 0:n-1){
-  a = (subset.size*i) + 1
-  b =  subset.size*(i+1)
-  print(c(a,b))
-  indices[[i+1,1]] = shuffled[a : b]
-}
+#for(i in 0:n-1){
+#  a = (subset.size*i) + 1
+#  b =  subset.size*(i+1)
+#  print(c(a,b))
+#  indices[[i+1,1]] = shuffled[a : b]
+#}
 
 
 
-for (i in 1:max.p){
-  for(j in 0:n){
-      x = bmi[c(indices[[j %% n]], indices[[(j+1) %% n]], indices[[(j+2) %% n]])]
-      y = pbfm[c(indices[[j %% n]], indices[[(j+1) %% n]], indices[[(j+2) %% n]])]
-      fit = lm(pbfm ~ poly(x, i), x = TRUE)
-      x.test = bmi[]
-  }
-}
-```
+#for (i in 1:max.p){
+#  for(j in 0:n){
+#      x = bmi[c(indices[[j %% n]], indices[[(j+1) %% n]], indices[[(j+2) %% n]])]
+#      y = pbfm[c(indices[[j %% n]], indices[[(j+1) %% n]], indices[[(j+2) %% n]])]
+#      fit = lm(pbfm ~ poly(x, i), x = TRUE)
+#      x.test = bmi[]
+#  }
+#}
 
 ## Problem 2
 
-```{r, echo = F}
+```{r}
 oral_ca <- read.csv("oral_ca/oral_ca.csv")
 attach(oral_ca)
 print(summary(oral_ca))
@@ -134,34 +142,194 @@ Aim of the study was to evaluate the risk of Oral cancer based on the variables 
 
 #### (a)
 
-Q: Dichotomize the variable cigs in two categories, smokers and not smokers, and create a table with the observed frequencies for cases and controls. In addition, provide the estimated probabilities (including their standard errors) of experiencing an oral cancer (i.e., being a case) for the two sub-populations.
+Q: 
+
+Dichotomize the variable cigs in two categories, smokers and not smokers, and create a table with the observed frequencies for cases and controls. In addition, provide the estimated probabilities (including their standard errors) of experiencing an oral cancer (i.e., being a case) for the two sub-populations.
 
 A:
+
 ```{r}
-N = nrow(oral_ca)
+
+N = length(oral_ca$ccstatus)
+smoker.nonSmoker = cigs == 0
 smokers = subset( oral_ca, oral_ca$cigs > 0 )#smokers = oral_ca[ oral_ca$cigs > 0]
 nonSmokers = subset(oral_ca, oral_ca$cigs == 0) #  nonSmokers = oral_ca[ oral_ca$cigs == 0 ]
 number.of.cc = nrow( subset(oral_ca,oral_ca$ccstatus == 1) )
 number.of.cc.smokers = nrow( subset(oral_ca, oral_ca$ccstatus == 1 & oral_ca$cigs > 0) )
 number.of.cc.nonSmokers = nrow(subset(oral_ca, oral_ca$ccstatus == 1 & oral_ca$cigs == 0) )
-number.of.somkers = nrow( subset( oral_ca, oral_ca$cigs > 0) )
-number.of.nonSmokers = nrow( subset( oral_ca, oral_ca$cigs == 0 ))
+n.smoker = nrow( subset( oral_ca, oral_ca$cigs > 0) )
+n.nonSmoker = nrow( subset( oral_ca, oral_ca$cigs == 0 ))
 
 # Binomial - Mean
-estProb = number.of.cc / N # Number of ppl with cancer devided on ppl (people in the query )
-estProbSmoker = number.of.cc.smoker / number.of.somkers # Number of ppl with cancer and smokes, devided on number of ppl who smokes.
-estProbNonSmoker = number.of.cc.nonSmoker / number.of.nonSmokers# Number of ppl with cancer and does not smoke, devided on number of ppl who does not soke.
+pi.common.hat = number.of.cc / N # Number of ppl with cancer devided on ppl (people in the query )
+pi.smoker.hat = number.of.cc.smokers / n.smoker # Number of ppl with cancer and smokes, devided on number of ppl who smokes.
+pi.nonSmoker.hat = number.of.cc.nonSmokers / n.nonSmoker# Number of ppl with cancer and does not smoke, devided on number of ppl who does not soke.
 
 # Binomial Vairance - Var(X) = n*p*(1-p)
-estVar = N * estProb * (1 - estProb)
-estVarSmoker = number.of.somkers * estProbSmoker * (1 - estProbSmoker)
-estVarNonSmoker = number.of.nonSmokers * estProbNonSmoker * (1 - estProbNonSmoker)
+se.pi.common = sqrt(pi.common.hat * (1 - pi.common.hat) / N)
+se.pi.smoker = sqrt(pi.smoker.hat * (1 - pi.nonSmoker.hat) /n.smoker)
+se.pi.nonSmoker = sqrt(pi.nonSmoker.hat * (1 - pi.nonSmoker.hat) /n.nonSmoker)
 
-cc.smoke.df = data.frame( colnames = "General", "Smoker", "Non Smoker"),
-)
+cc.smoke.df  = data.frame( 
+  pi = c(pi.common.hat, pi.smoker.hat, pi.nonSmoker.hat), 
+  se = c(se.pi.common, se.pi.smoker, se.pi.nonSmoker),
+  row.names = c("General", "Smoker", "NonSmoker")
+  )
 ```
 
+#### (b)
+
+Q:
+
+Test the hypothesis that the two probabilities are equal and comment on the result.
+
+A:
+
+Hypothesis: H0: probSmokers == probNonSmokers against H1: probSmokers != probNonSmokers. Computing the p-value
+
+```{r}
+# compute the likelihood ratio statistics test
+llik_pi.smoker.hat_pi.nonSmoker.hat = sum(dbinom(smoker.nonSmoker[ smoker.nonSmoker == TRUE], 1, pi.smoker.hat, log = TRUE)) + 
+                                      sum(dbinom(smoker.nonSmoker[ smoker.nonSmoker == FALSE], 1, pi.nonSmoker.hat, log = TRUE))
+llik_pi.common.hat = sum(dbinom(smoker.nonSmoker, 1, pi.common.hat, log=TRUE))
+
+w = 2 * (llik_pi.smoker.hat_pi.nonSmoker.hat - llik_pi.common.hat)
+p.val = 1 - pchisq(w, df = 1)
+```
+
+We can se that the p-val is zero, so we can drop H0.
+
+#### (c)
+
+Q:
+
+Fit a linear logistic model using the dichotomized variable as explanatory variable and comment on the result: does being a smoker increase or decrease the risk of experiencing oral cancer? How much, in terms of log-odds?
+
+A:
+
+```{r}
+
+y = oral_ca$ccstatus == 1
+x = oral_ca$cigs > 0
+
+mod = glm(y ~ x, family = 'binomial')
+print(summary(mod))
+beta = mod$coefficients
+print(beta)
+
+pi.nonSmoker = exp(beta[1]) / (1 + exp(beta[1]))
+pi.smoker = exp(beta[1] + beta[2]) / (1 + exp(beta[1] + beta[2]))
+
+#odds
+odds.nonSmoker = pi.nonSmoker.hat / (1 - pi.nonSmoker.hat)
+odds.smoker = pi.smoker.hat / (1 - pi.smoker.hat)
+#log odds ratio
+log.odds.ratio = (odds.smoker / odds.nonSmoker)
+
+log.odds.ratio
+```
+
+<<<<<<< HEAD
 '
+=======
+We see that the odds of cc for a smoker against a non somoker is aprox 4, aka. 4 to 1.
+
+#### (d)
+
+Q:
+
+Repeat the analysis of point (c) by considering, now, the number of cigarettes as a continuous variable. Comment on the result: What does the regression coefficient for this variable mean now? Why does the value of the intercept change with respect to point (c), although they are both related to the odds for non-smokers?
+
+A:
+
+```{r}
+x = cigs
+y = ccstatus
+mod.continuous = glm(y ~ x, family = 'binomial')
+print(summary(mod.continuous))
+
+
+```
+
+The regression coefficient now tells us the increase in odds of cancer per cigarets smoked per day. The intercept is changed since smoking one sigaret per day is closer to zero than smoking 20. In the non continius model the biggest smoker and the rest is given the same odds.
+
+### Consider now the other three variables (drinks, sex and age) as well:
+
+#### (e)
+
+Q: 
+
+Fit a linear logistic model including all the explanatory variables and report the result. What is the increase in terms of log-odds for an increasing number of cigarettes per day smoked estimated by this model? Why did it change from the one obtained in model ﬁtted in point (c)? 
+
+```{r}
+mod.all = glm(y ~  oral_ca$drinks + oral_ca$cigs + oral_ca$age + oral_ca$sex, family = 'binomial')
+print(summary(mod.all))
+```
+
+The increase in terms of log-odds for an increasing number of cigaretts par day by this model is 0.035, wich is a little lower than in the prewius model. This can be because of some of the affects of other facors was tried explained by one facotr. Now we have other factors to explain this change. Wich will change the value.
+
+#### (e)
+
+```{r}
+mod.without.Age = glm(y ~  oral_ca$drinks + oral_ca$cigs + oral_ca$sex, family = 'binomial')
+print(summary(mod.without.Age))
+plot(mod.without.Age)
+```
+
+Since the explanatory variable age has a large p-value can we not say it gives significant value to the model. So it does not seem like there is a difference in age. Lookin at the deviance the age variable did noting significant for the model ether. So i would choose the one with less explanatory variables, aka the one without Age
+
+#### (g)
+
+Q:
+
+Use a polynomial of degree 2 to model the effect of drinks. Does it improve the model?
+
+A: 
+
+```{r}
+mod.quad.drinks = glm(y ~  oral_ca$drinks + I(oral_ca$drinks^2) + oral_ca$cigs + oral_ca$sex, family = 'binomial')
+print(summary(mod.quad.drinks))
+plot(mod.quad.drinks)
+```
+
+The change to a quadratic polynomial for the drinks varibale did not seem to change much, it is a small variable comaring to the other once, but have a sigificant p-value. The p-value can be caused by the hig similarity between drinks and drinks^2, this theory is strengthen by the increase in the p-value of drinks.
+
+
+#### (h)
+
+Q:
+
+What about doing that for cigs instead of drinks? What is the effect on the model?
+
+A:
+
+```{r}
+mod.quad.smokes = glm(y ~  oral_ca$drinks + oral_ca$cigs+ I(oral_ca$cigs^2) + oral_ca$sex, family = 'binomial')
+print(summary(mod.quad.smokes))
+plot(mod.quad.smokes)
+
+```
+
+Adding cigs^2 as a variable also did not change the model much. Here the cigs^2 variable eaven has a high p-value, showing the insignificance of the variable. 
+
+
+#### (i)
+
+Adding the quadratic variables did not seem to give the biggest effect. It seems to make the none suared variable (cigs, drinks) less significant with a compareble degree the quadratic values give to the model. So they might be better but not significantly. No significant difference in the residuals ether.
+
+#### (j)
+
+If the model fit a quareatic scale, that means that two drinks is more then twice as bad than one drink. It does not necessarily make it worse to drink 10 units, if the model fits with linear or quadratic wariables, it will just change the coefficients. A way to explain this is with the functions
+
+f(x = 10) = beta * x = a, and f(x = 10) = beta1 * x + beta2 * x^2 = a.
+
+The point of the function is to show that if you drink 10 drinks and the relation is linear can be the same as drinking 10 drinks in a quadradic model. This is correct in all polynomials.
+
+#### (k)
+
+...
+
+>>>>>>> 6a02f8d27eeab2af2bff3f84e1213e07d2643ea5
 
 
 
