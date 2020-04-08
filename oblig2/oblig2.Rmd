@@ -14,11 +14,38 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Reading dataset
 
 ```{r}
-df <- read.csv("https://s3.amazonaws.com/assets.datacamp.com/blog_assets/test.csv",
+df <- read.csv("leukemia_big.csv",
                header = T,
                sep = ","
                )
 N_gene_expressions = 7128
 N_patiants = 72
+```
+
+###  a)
+
+```{r}
+Sigma_hat = cov(df)
+e = eigen(Sigma_hat)
+e_val = e$values
+e_vec = e$vectors
+
+# two largets
+lambda_1 = which.max(e_val)
+lambda_2 = which.max(e_val != e_val[lambda_1])
+
+plot(Sigma_hat[lambda_1, 1:72], Sigma_hat[lambda_2, 1:72])
+
+```
+
+
+```{r}
+library(pls)
+
+PC_analysis = prcomp(t(df), center = T, scale = T)
+plot(
+  PC_analysis$x, col=c("blue", "red"), main="lukemia", xlab="observations", ylab = "gene expression", pch=1
+)
+
 ```
 
