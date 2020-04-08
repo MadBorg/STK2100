@@ -20,32 +20,39 @@ df <- read.csv("leukemia_big.csv",
                )
 N_gene_expressions = 7128
 N_patiants = 72
+
+ALL_patients = grepl("ALL", names(df))
+AML_patients = grepl("AML", names(df))
 ```
 
 ###  a)
 
 ```{r}
-Sigma_hat = cov(df)
-e = eigen(Sigma_hat)
-e_val = e$values
-e_vec = e$vectors
+library(pls)
 
-# two largets
-lambda_1 = which.max(e_val)
-lambda_2 = which.max(e_val != e_val[lambda_1])
+PC_analysis = prcomp(t(df), center = T, scale = T, rank. = 2)
+plot(
+  PC_analysis$x, col=c("blue", "red"), main="lukemia", xlab="PC1", ylab = "PC2", pch=1
+)
+X = PC_analysis$x
 
-plot(Sigma_hat[lambda_1, 1:72], Sigma_hat[lambda_2, 1:72])
+points(X[ALL_patients,1], X[ALL_patients, 2], col = "4", pch = 19)
+points(X[AML_patients,1], X[AML_patients, 2], col = "2", pch = 19)
+legend("topleft", legend = c("ALL", "AML"), col = c(2, 4), pch = c(19, 19))
 
 ```
 
+### b)
 
 ```{r}
-library(pls)
+library(glmnet)
+target_df = df <- read.csv("response_train.csv",
+               header = T,
+               sep = ","
+               )
 
-PC_analysis = prcomp(t(df), center = T, scale = T)
-plot(
-  PC_analysis$x, col=c("blue", "red"), main="lukemia", xlab="observations", ylab = "gene expression", pch=1
-)
+mod.Lasso = glmnet(x = as.matrix(df), y = as.matrix(target_df), alfa = 1, standardize = T)
+lambda.l.a = cv.glmnet(x =as.matrix(df), y = as.matrix(target_df), alfa = 1, standardize = T)
 
 ```
 
