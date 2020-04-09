@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Reading dataset
 
 ```{r}
-df <- read.csv("leukemia_big.csv",
+df <- read.csv("http://web.stanford.edu/~hastie/CASI_files/DATA/leukemia_big.csv",
                header = T,
                sep = ","
                )
@@ -46,13 +46,15 @@ legend("topleft", legend = c("ALL", "AML"), col = c(2, 4), pch = c(19, 19))
 
 ```{r}
 library(glmnet)
-target_df = df <- read.csv("response_train.csv",
+target_df <- read.csv("https://www.uio.no/studier/emner/matnat/math/STK2100/v20/eksamen/response_train.csv",
                header = T,
                sep = ","
                )
 
-mod.Lasso = glmnet(x = as.matrix(df), y = as.matrix(target_df), alfa = 1, standardize = T)
-lambda.l.a = cv.glmnet(x =as.matrix(df), y = as.matrix(target_df), alfa = 1, standardize = T)
+mod.Lasso = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T)
+lambda.l.a = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
+plot(mod.Lasso)
+plot(lambda.l.a)
 
-```
+ ```
 
