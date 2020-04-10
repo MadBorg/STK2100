@@ -51,10 +51,31 @@ target_df <- read.csv("https://www.uio.no/studier/emner/matnat/math/STK2100/v20/
                sep = ","
                )
 
-mod.Lasso = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T)
-lambda.l.a = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
-plot(mod.Lasso)
-plot(lambda.l.a)
+mod.Lasso.3 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
+lambda.l.a.3 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
+lambda.l.a.3
 
- ```
+
+
+mod.Lasso.10 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10)
+lambda.l.a.10 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10)
+lambda.l.a.10
+
+
+mod.Lasso.72 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72)
+lambda.l.a.72 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72)
+lambda.l.a.72
+
+```
+
+The penalty method used in lasso might not just help with __parameter restriction__, but also might requier some coeffisients to be zero. Effectivly reducing the complexity of the model. This is using a absolute value constraint. Where lambda (s) is a shrinking parameter where the absolute sum of the betas shuld be smaller then lambda.
+
+### c)
+
+
+```{r}
+eps = 1e-13
+
+
+```
 
