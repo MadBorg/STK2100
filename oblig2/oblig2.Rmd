@@ -51,18 +51,18 @@ target_df <- read.csv("https://www.uio.no/studier/emner/matnat/math/STK2100/v20/
                sep = ","
                )
 
-mod.Lasso.3 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
+# mod.Lasso.3 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
 lambda.l.a.3 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
 lambda.l.a.3
 
 
 
-mod.Lasso.10 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10)
+# mod.Lasso.10 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10)
 lambda.l.a.10 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10)
 lambda.l.a.10
 
 
-mod.Lasso.72 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72)
+# mod.Lasso.72 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72)
 lambda.l.a.72 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72)
 lambda.l.a.72
 
@@ -74,8 +74,45 @@ The penalty method used in lasso might not just help with __parameter restrictio
 
 
 ```{r}
-eps = 1e-13
+mod.Lasso.3 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3, lambda = lambda.l.a.3$lambda.min)
+mod.Lasso.10 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10, lambda = lambda.l.a.10$lambda.min)
+mod.Lasso.72 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72, lambda = lambda.l.a.72$lambda.min)
+
+"Non zero indexes for Lasso 3"
+which(mod.Lasso.3$beta != 0)
+"Non zero indexes for Lasso 10"
+which(mod.Lasso.10$beta != 0)
+"Non zero indexes for Lasso 72"
+which(mod.Lasso.72$beta != 0)
+
+```
+
+### d)
+
+```{r}
+N = 11
+
+lambda.r = cv.glmnet(x = t(df), y = target_df[,2], alfa = 0)
+best_lambda = lambda.r$lambda.min
+mod.ridge = glmnet(x = t(df), y = target_df[,2], alfa = 0, lambda = best_lambda)
+sort(mod.ridge$beta, decreasing = TRUE)[0:N-1] # ?
 
 
 ```
+
+### e)
+
+
+```{r}
+# pcr.analysis = prcomp(t(df), center = T, scale = T, rank. = 2)
+mod.pcr = pcr(target_df[,2]~., data = data.frame(t(df)), scale = T, validation = "CV")
+validationplot(mod.pcr, val.type="MSEP" )
+mod.pcr.small = pcr(target_df[,2]~t(df), scale = T, ncomp = 6)
+#validationplot(mod.pcr.small, val.type="MSEP" )
+mod.pcr.larger = pcr(target_df[,2]~t(df), scale = T, ncomp = 13)
+#validationplot(mod.pcr.larger, val.type="MSEP" )
+summary(mod.pcr)
+
+```
+
 
