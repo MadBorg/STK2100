@@ -1,0 +1,34 @@
+
+
+mod <- list()
+mse <- list()
+# Simple linear
+mod$lin <- lm(pbfm~bmi, bodyfat.data)
+summary(mod$lin)
+
+# Polynomial regression
+mod$poly.3 <- lm(pbfm~poly(bmi, degree = 3))
+mod$poly.5 <- lm(pbfm~poly(bmi, degree = 5))
+mod$poly.10 <- lm(pbfm~poly(bmi, degree = 10))
+summary(mod$poly.3)
+summary(mod$poly.5)
+summary(mod$poly.10)
+
+# Local regression
+k = train.kknn(pbfm ~ bmi, bodyfat.data)
+k.best = k$best.parameters[2]
+h = as.integer(k.best)
+mod$local = sm.regression(bmi, pbfm, h=h, col = "2", display ="none" )
+summary(mod$local)
+
+# Splines
+bmirange =range(bmi)
+X.seq = seq(from =bmirange[1], to= bmirange[2])
+
+mod$spline.1 = lm(pbfm ~ bs(bmi, df=4, degree=1), data=bodyfat.data )
+mod$spline.2 = lm(pbfm ~ bs(bmi, df=4, degree=2), data=bodyfat.data )
+mod$spline.3 = lm(pbfm ~ bs(bmi, df=4, degree=3), data=bodyfat.data )
+
+summary(mod$spline.1)
+summary(mod$spline.2)
+summary(mod$spline.3)

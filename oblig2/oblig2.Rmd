@@ -2,7 +2,7 @@
 title: "oblig2"
 author: "Sanders"
 date: "4/7/2020"
-output: pdf_document
+output: pdata_document
 ---
 
 ```{r setup, include=FALSE}
@@ -14,15 +14,36 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Reading dataset
 
 ```{r}
-df <- read.csv("http://web.stanford.edu/~hastie/CASI_files/DATA/leukemia_big.csv",
+data <- read.csv("http://web.stanford.edu/~hastie/CASI_files/DATA/leukemia_big.csv",
                header = T,
                sep = ","
                )
-N_gene_expressions = 7128
-N_patiants = 72
+N_gene_expressions = nrow(data)
+N_patients = ncol(data)
+N_train = (2/3) * N_gene_expressions
+set.seed(20200304)
+#train <- sample(N_gene_expressions, N_train, replace = FALSE)
 
-ALL_patients = grepl("ALL", names(df))
-AML_patients = grepl("AML", names(df))
+
+
+#X.train = as.matrix(data[-N_patients,  ])
+#y.train = data[N_patients,  ]
+
+
+# X.train = as.matrix(data[, -(N_patients) ])
+# y.train = data[train, N_patients]
+# X.test = as.matrix(data[-train, -N_patients])
+# y.test = data[ -train, N_patients]
+# X = as.matrix(data[, -N_patients ])
+# y = data[, N_patients]
+
+
+X.train.mean = colMeans(X.train)
+X.train.sd = apply(X.train, 2, sd)
+X.train.std = scale(X.train, center = TRUE, scale = TRUE)
+
+ALL_patients = grepl("ALL", names(data))
+AML_patients = grepl("AML", names(data))
 ```
 
 ###  a)
@@ -30,14 +51,15 @@ AML_patients = grepl("AML", names(df))
 ```{r}
 library(pls)
 
-PC_analysis = prcomp(t(df), center = T, scale = T, rank. = 2)
+PC_analysis = prcomp(t(data), center = T, scale = T, rank. = 2)
+
 plot(
   PC_analysis$x, col=c("blue", "red"), main="lukemia", xlab="PC1", ylab = "PC2", pch=1
 )
-X = PC_analysis$x
+PC.X = PC_analysis$x
 
-points(X[ALL_patients,1], X[ALL_patients, 2], col = "4", pch = 19)
-points(X[AML_patients,1], X[AML_patients, 2], col = "2", pch = 19)
+points(PC.X[ALL_patients,1], PC.X[ALL_patients, 2], col = "4", pch = 19)
+points(PC.X[AML_patients,1], PC.X[AML_patients, 2], col = "2", pch = 19)
 legend("topleft", legend = c("ALL", "AML"), col = c(2, 4), pch = c(19, 19))
 
 ```
@@ -46,25 +68,19 @@ legend("topleft", legend = c("ALL", "AML"), col = c(2, 4), pch = c(19, 19))
 
 ```{r}
 library(glmnet)
-target_df <- read.csv("https://www.uio.no/studier/emner/matnat/math/STK2100/v20/eksamen/response_train.csv",
+target_data <- read.csv("https://www.uio.no/studier/emner/matnat/math/STK2100/v20/eksamen/response_train.csv",
                header = T,
                sep = ","
                )
+y.train = target_data[, 2]
 
-# mod.Lasso.3 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
-lambda.l.a.3 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3)
+lambda.l.a.3 = cv.glmnet(x =t(data), y = target_data[,2], alpha = 1, standardize = T, nfolds = 3)
+lambda.l.a.10 = cv.glmnet(x =t(data), y = target_data[,2], alpha = 1, standardize = T, nfolds = 10)
+lambda.l.a.loocv = cv.glmnet(x =t(data), y = target_data[,2], alpha = 1, standardize = T, nfolds = N_patients)
+
 lambda.l.a.3
-
-
-
-# mod.Lasso.10 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10)
-lambda.l.a.10 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10)
 lambda.l.a.10
-
-
-# mod.Lasso.72 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72)
-lambda.l.a.72 = cv.glmnet(x =t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72)
-lambda.l.a.72
+lambda.l.a.loocv
 
 ```
 
@@ -74,16 +90,43 @@ The penalty method used in lasso might not just help with __parameter restrictio
 
 
 ```{r}
-mod.Lasso.3 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 3, lambda = lambda.l.a.3$lambda.min)
-mod.Lasso.10 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 10, lambda = lambda.l.a.10$lambda.min)
-mod.Lasso.72 = glmnet(x = t(df), y = target_df[,2], alfa = 1, standardize = T, nfolds = 72, lambda = lambda.l.a.72$lambda.min)
+# Renaming
 
-"Non zero indexes for Lasso 3"
-which(mod.Lasso.3$beta != 0)
-"Non zero indexes for Lasso 10"
-which(mod.Lasso.10$beta != 0)
-"Non zero indexes for Lasso 72"
-which(mod.Lasso.72$beta != 0)
+for (i in 1:nrow(data)){
+  row.names(data)[i] <- sprintf("gene%d", i)
+}
+
+# mod.Lasso.3 = glmnet(x = t(data), y = target_data[,2], alpha = 1, standardize = T, nfolds = 3)
+lambda.l.3 = cv.glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = 3)
+lambda.l.10 = cv.glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = 10)
+lambda.l.loocv = cv.glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = N_patients)
+
+
+mod.Lasso.3 = glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = 3, lambda = lambda.l.3$lambda.min)
+mod.Lasso.10 = glmnet(x =t(data), y = y.train,  alpha = 1, standardize = T, nfolds = 10, lambda = lambda.l.10$lambda.min)
+mod.Lasso.loocv = glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = N_train , lambda =  lambda.l.loocv$lambda.min)
+
+"Lasso 3, parameters, (intersept first)"
+c(
+  mod.Lasso.3$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
+)
+"Lasso 3, indices of non zero beta"
+row.names(data)[which(mod.Lasso.3$beta != 0)]
+
+"Lasso 10, parameters, (intersept first)"
+c(
+  mod.Lasso.10$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
+)
+"Lasso 10, indices of non zero beta"
+row.names(data)[which(mod.Lasso.10$beta != 0)]
+
+"Lasso loocv, parameters, (intersept first)"
+c(
+  mod.Lasso.loocv$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
+)
+"Lasso loocv, indices of non zero beta"
+row.names(data)[which(mod.Lasso.loocv$beta != 0)]
+
 
 ```
 
@@ -92,10 +135,18 @@ which(mod.Lasso.72$beta != 0)
 ```{r}
 N = 11
 
-lambda.r = cv.glmnet(x = t(df), y = target_df[,2], alfa = 0)
+lambda.r = cv.glmnet(x = t(data),  y = y.train, alpha = 0)
 best_lambda = lambda.r$lambda.min
-mod.ridge = glmnet(x = t(df), y = target_df[,2], alfa = 0, lambda = best_lambda)
-sort(mod.ridge$beta, decreasing = TRUE)[0:N-1] # ?
+mod.ridge = glmnet(x = t(data), y = y.train, alpha = 0, lambda = best_lambda)
+w = c(
+  mod.ridge$a0[mod.ridge$lambda == lambda.r$lambda.min],
+  sort(mod.ridge$beta[, mod.ridge$lambda == lambda.r$lambda.min], decreasing = T)[0:(N-1)]
+  )
+w
+#w = c(
+#  mod.ridge$a0[mod.ridge$lambda == lambda.r$lambda.min],
+#  mod.ridge$beta[1:(N)]
+#  )
 
 
 ```
@@ -104,15 +155,255 @@ sort(mod.ridge$beta, decreasing = TRUE)[0:N-1] # ?
 
 
 ```{r}
-# pcr.analysis = prcomp(t(df), center = T, scale = T, rank. = 2)
-mod.pcr = pcr(target_df[,2]~., data = data.frame(t(df)), scale = T, validation = "CV")
+# pcr.analysis = prcomp(t(data), center = T, scale = T, rank. = 2)
+mod.pcr = pcr(target_data[,2] ~., data= data.frame(t(data)), scale = T, validation = "CV")
 validationplot(mod.pcr, val.type="MSEP" )
-mod.pcr.small = pcr(target_df[,2]~t(df), scale = T, ncomp = 6)
+mod.pcr.small = pcr(y.train~t(data), scale = T, ncomp = 5)
 #validationplot(mod.pcr.small, val.type="MSEP" )
-mod.pcr.larger = pcr(target_df[,2]~t(df), scale = T, ncomp = 13)
+mod.pcr.larger = pcr(y.train~t(data), scale = T, ncomp = 13)
 #validationplot(mod.pcr.larger, val.type="MSEP" )
 summary(mod.pcr)
 
 ```
 
+### f)
+
+```{r}
+
+test.data = read.csv("https://www.uio.no/studier/emner/matnat/math/STK2100/v20/eksamen/test_set.csv",
+               header = T,
+               sep = ","
+               )
+
+# Manual scaling
+y.test = test.data[,1]
+x.test = as.matrix(test.data[,-1])
+
+p = ncol(X.test)
+x.test.std = sapply(
+  1:p, function(i, data, m, s) (data[,i] - m[i])/s[i],
+  data = x.test,  m = X.train.mean, s = X.train.sd
+  )
+colnames(x.test.std) <- colnames(x.test)
+
+
+train.error <- list()
+train.error$lasso.3 <- mean((y.train  - predict(mod.Lasso.3, newx = t(data) ))^2)
+train.error$lasso.10 <- mean((y.train- predict(mod.Lasso.10, newx =  t(data)))^2)
+train.error$lasso.loocv <- mean((y.train - predict(mod.Lasso.loocv, newx =  t(data) ))^2)
+train.error$ridge <- mean((y.train - predict(mod.ridge, newx =  t(data) ))^2)
+train.error$pcr.small <- mean((y.train - predict(mod.pcr.small, newdata = t(data)))^2)
+train.error$pcr.larger <- mean((y.train - predict(mod.pcr.larger, newdata =  t(data)))^2)
+
+test.error <- list()
+test.error$lasso.3 = mean((y.test  - predict(mod.Lasso.3, newx = x.test))^2)
+test.error$lasso.10 = mean((y.test - predict(mod.Lasso.10, newx = x.test))^2)
+test.error$lasso.loocv = mean((y.test  - predict(mod.Lasso.loocv, newx = x.test) )^2)
+test.error$ridge = mean((y.test  - predict(mod.ridge, newx = x.test ))^2)
+test.error$pcr.small = mean((y.test  - predict(mod.pcr.small, newdata = x.test))^2)
+test.error$pcr.larger = mean((y.test  - predict(mod.pcr.larger, newdata = x.test ))^2)
+#test.error$lm
+
+
+```
+
+### g)
+
+```{r}
+
+# c
+# mod.Lasso.3 = glmnet(x = t(data), y = target_data[,2], alpha = 1, standardize = T, nfolds = 3)
+#lambda.l.3 = cv.glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = 3)
+#lambda.l.10 = cv.glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = 10)
+#lambda.l.loocv = cv.glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = N_patients)
+
+mod.Lasso.3.1se = glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = 3, lambda = lambda.l.3$lambda.1se)
+mod.Lasso.10.1se = glmnet(x =t(data), y = y.train,  alpha = 1, standardize = T, nfolds = 10, lambda = lambda.l.10$lambda.1se)
+mod.Lasso.loocv.1se = glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = N_train , lambda =  lambda.l.loocv$lambda.1se)
+
+# d
+best_lambda.1se = lambda.r$lambda.1se
+mod.ridge.1se = glmnet(x = t(data), y = y.train, alpha = 0, lambda = best_lambda.1se)
+
+# f
+test.error.1se <- list()
+test.error.1se$lasso.3 = mean((y.test  - predict(mod.Lasso.3.1se, newx = x.test))^2)
+test.error.1se$lasso.10 = mean((y.test - predict(mod.Lasso.10.1se, newx = x.test))^2)
+test.error.1se$lasso.loocv = mean((y.test  - predict(mod.Lasso.loocv.1se, newx = x.test) )^2)
+test.error.1se$ridge = mean((y.test  - predict(mod.ridge.1se, newx = x.test ))^2)
+test.error$pcr.small = NA
+test.error$pcr.larger = NA
+
+# Data frame
+error.data = do.call(rbind, Map(data.frame, A=test.error, B=test.error.1se))
+colnames(error.data) <- c("lambda.min", "lambda.1se")
+error.data
+
+```
+
+
+## Problem 2
+
+### a)
+
+```{r}
+bodyfat.data = read.csv("res_bodyfat/res_bodyfat.csv",
+               header = T,
+               sep = ","
+               )
+bmi = bodyfat.data$bmi
+pbfm = bodyfat.data$pbfm
+
+par(mfrow=c(2,2))
+# plotting points
+plot(bmi, pbfm, cex =0.2, main= "None")
+
+
+# Local regression
+
+x0 = seq(min(bmi), max(bmi), length=250)
+
+plot(bmi, pbfm, cex =0.2, main= "None")
+mod.015 = loess(pbfm~bmi, span=0.15, data = bodyfat.data)
+lines(x = x0, y = predict(mod.015, newdata = x0), col = "4")
+
+plot(bmi, pbfm, cex =0.2, main= "h: 0.5")
+mod.05 = loess(pbfm~bmi, span=0.5, data = bodyfat.data)
+lines(x = x0, y = predict(mod.05, newdata = x0), col = "2")
+
+plot(bmi, pbfm, cex =0.2, main= "h: 1")
+mod.1 = loess(pbfm~bmi, span=1, data = bodyfat.data)
+lines(x = x0, y = predict(mod.1, newdata = x0), col = "3")
+
+```
+
+### b)
+
+```{r}
+library(kknn)
+
+k = train.kknn(pbfm ~ bmi, bodyfat.data)
+k.best = as.intk$best.parameters[2]
+h = as.integer(k.best)
+
+par(mfrow=c(1,1))
+plot(bodyfat.data[, 1:2], cex =0.4, main= "h: 15")
+mod.fine = loess(bmi~ pbfm, span=h, col = "2", add=T)
+X = as.matrix(bmi)
+Y = as.matrix(pbfm)
+z = X / h
+x0 = seq(1, 70, by=0.1)
+W = dnorm(x0, X, h)
+W = min(Y) + 5 * W / max(W)
+mod.norm = lm(Y~1,data=bodyfat.data,weights=W)
+```
+
+
+### c)
+
+```{r}
+library(splines)
+par(mfrow=c(3,1))
+bmirange =range(bmi)
+X.seq = seq(from =bmirange[1], to= bmirange[2])
+
+mod.spline.1 = lm(pbfm ~ bs(bmi, df=4, degree=1), data=bodyfat.data )
+mod.spline.2 = lm(pbfm ~ bs(bmi, df=4, degree=2), data=bodyfat.data )
+mod.spline.3 = lm(pbfm ~ bs(bmi, df=4, degree=3), data=bodyfat.data )
+
+
+pred.spline.1 = predict(mod.spline.1, newdata = list(bmi=X.seq), se=T)
+pred.spline.2 = predict(mod.spline.2, newdata = list(bmi=X.seq), se=T)
+pred.spline.3 = predict(mod.spline.3, newdata = list(bmi=X.seq), se=T)
+
+plot(bmi, pbfm, main = "spline 1")
+lines(X.seq, pred.spline.1$fit, col="red", lwd=2)
+
+plot(bmi, pbfm, main = "spline 2")
+lines(X.seq, pred.spline.2$fit, col="green", lwd=2)
+
+plot(bmi, pbfm, main = "spline 3")
+lines(X.seq, pred.spline.3$fit, col="blue", lwd=2)
+
+```
+
+### d)
+
+```{r}
+x0 = seq(min(bmi), max(bmi), length = 250)
+
+mod.spline.smooth.050 = smooth.spline(bmi, pbfm, spar = 0.5)
+mod.spline.smooth.075 = smooth.spline(bmi, pbfm, spar = 0.75)
+mod.spline.smooth.125 = smooth.spline(bmi, pbfm, spar = 1.25) 
+
+par(mfrow=c(1,1))
+plot(bmi, pbfm, main = "spline smooth 0.10")
+lines(predict(mod.spline.smooth.050, x = x0), col="red", lwd=2)
+lines(predict(mod.spline.smooth.075, x = x0), col="green", lwd=2)
+lines(predict(mod.spline.smooth.125, x = x0), col="blue", lwd=2)
+
+```
+
+### e)
+
+```{r}
+
+n = length(bmi)
+set.seed(701)
+train <- sample(n, 2*n/3, replace = FALSE)
+X.train = bmi[train]
+y.train = pbfm[train]
+X.test = bmi[-train]
+y.test = pbfm[-train]
+
+mod <- list()
+mse <- list()
+
+# Simple linear
+mod$lin <- lm(y.train~X.train, bodyfat.data)
+summary(mod$lin)
+
+mse$lin <- mean((y.test - predict(mod$lin, x = X.test))^2)
+
+# Polynomial regression
+mod$poly.3 <- lm(y.train~poly(X.train, degree = 3))
+mod$poly.5 <- lm(y.train~poly(X.train, degree = 5))
+mod$poly.10 <- lm(y.train~poly(X.train, degree = 10))
+
+mse$poly.3 <- mean((y.test - predict(mod$poly.3, x = X.test))^2)
+mse$poly.5 <- mean((y.test - predict(mod$poly.5, x = X.test))^2)
+mse$poly.10 <- mean((y.test - predict(mod$poly.10, x = X.test))^2)
+
+summary(mod$poly.3)
+summary(mod$poly.5)
+summary(mod$poly.10)
+
+# Local regression
+k = train.kknn(y.train ~ X.train, bodyfat.data)
+k.best = k$best.parameters[2]
+h = as.integer(k.best)
+mod$local = loess(y.train~X.train, span=h, data= data.frame(X.train))
+
+mse$local<- mean((y.test - predict(mod$local, x = X.test))^2)
+summary(mod$local)
+
+# Splines
+X.trainrange =range(X.train)
+X.seq = seq(from =X.trainrange[1], to= X.trainrange[2])
+
+mod$spline.1 = lm(y.train ~ bs(X.train, df=4, degree=1), data=bodyfat.data )
+mod$spline.2 = lm(y.train ~ bs(X.train, df=4, degree=2), data=bodyfat.data )
+mod$spline.3 = lm(y.train ~ bs(X.train, df=4, degree=3), data=bodyfat.data )
+
+mse$spline.1 <- mean((y.test - predict(mod$spline.1, x = X.test))^2)
+mse$spline.2 <- mean((y.test - predict(mod$spline.2, x = X.test))^2)
+mse$spline.3 <- mean((y.test - predict(mod$spline.3, x = X.test))^2)
+
+summary(mod$spline.1)
+summary(mod$spline.2)
+summary(mod$spline.3)
+
+```
+
+I test ing 
 
