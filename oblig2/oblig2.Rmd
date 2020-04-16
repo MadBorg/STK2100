@@ -5,15 +5,19 @@ date: "4/7/2020"
 output: pdata_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+#```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+#load("myWorkSpace.RData")
+#```
 
 ## Problem 1.
 
 ### Reading dataset
 
 ```{r}
+library(pls)
+library(glmnet)
+library(kknn)
 data <- read.csv("http://web.stanford.edu/~hastie/CASI_files/DATA/leukemia_big.csv",
                header = T,
                sep = ","
@@ -37,11 +41,6 @@ set.seed(20200304)
 # X = as.matrix(data[, -N_patients ])
 # y = data[, N_patients]
 
-
-X.train.mean = colMeans(X.train)
-X.train.sd = apply(X.train, 2, sd)
-X.train.std = scale(X.train, center = TRUE, scale = TRUE)
-
 ALL_patients = grepl("ALL", names(data))
 AML_patients = grepl("AML", names(data))
 ```
@@ -49,7 +48,6 @@ AML_patients = grepl("AML", names(data))
 ###  a)
 
 ```{r}
-library(pls)
 
 PC_analysis = prcomp(t(data), center = T, scale = T, rank. = 2)
 
@@ -64,10 +62,13 @@ legend("topleft", legend = c("ALL", "AML"), col = c(2, 4), pch = c(19, 19))
 
 ```
 
+Im the plot we can see that the points refering to All and the once reffering to AML is clearly on pifferent places in the area, but with some overlap. This means that they are not perfectly linearly seperateble, but there can be drawn a line that will be a better then nothing estimater.
+
+
 ### b)
 
 ```{r}
-library(glmnet)
+
 target_data <- read.csv("https://www.uio.no/studier/emner/matnat/math/STK2100/v20/eksamen/response_train.csv",
                header = T,
                sep = ","
@@ -106,29 +107,32 @@ mod.Lasso.3 = glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfold
 mod.Lasso.10 = glmnet(x =t(data), y = y.train,  alpha = 1, standardize = T, nfolds = 10, lambda = lambda.l.10$lambda.min)
 mod.Lasso.loocv = glmnet(x = t(data), y = y.train, alpha = 1, standardize = T, nfolds = N_train , lambda =  lambda.l.loocv$lambda.min)
 
-"Lasso 3, parameters, (intersept first)"
-c(
-  mod.Lasso.3$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
-)
-"Lasso 3, indices of non zero beta"
+#print("Lasso 3, parameters, (intersept first)")
+#c(
+#  mod.Lasso.3$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
+#)
+print("Lasso 3, indices of non zero beta")
 row.names(data)[which(mod.Lasso.3$beta != 0)]
 
-"Lasso 10, parameters, (intersept first)"
-c(
-  mod.Lasso.10$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
-)
-"Lasso 10, indices of non zero beta"
+#print("Lasso 10, parameters, (intersept first)")
+#c(
+#  mod.Lasso.10$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
+#)
+print("Lasso 10, indices of non zero beta")
 row.names(data)[which(mod.Lasso.10$beta != 0)]
 
-"Lasso loocv, parameters, (intersept first)"
-c(
-  mod.Lasso.loocv$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
-)
-"Lasso loocv, indices of non zero beta"
+#print("Lasso loocv, parameters, (intersept first)")
+#c(
+#  mod.Lasso.loocv$a0, mod.Lasso.3$beta[mod.Lasso.3$beta != 0]
+#)
+print("Lasso loocv, indices of non zero beta")
 row.names(data)[which(mod.Lasso.loocv$beta != 0)]
 
 
 ```
+
+Over we can see printed the genes deemed significant by the lasso model for different cross validation numbers. 
+
 
 ### d)
 
@@ -148,8 +152,8 @@ w
 #  mod.ridge$beta[1:(N)]
 #  )
 
-
 ```
+Over the 11 first regression coefficients from the ridge model
 
 ### e)
 
@@ -166,6 +170,8 @@ summary(mod.pcr)
 
 ```
 
+
+
 ### f)
 
 ```{r}
@@ -179,13 +185,6 @@ test.data = read.csv("https://www.uio.no/studier/emner/matnat/math/STK2100/v20/e
 y.test = test.data[,1]
 x.test = as.matrix(test.data[,-1])
 
-p = ncol(X.test)
-x.test.std = sapply(
-  1:p, function(i, data, m, s) (data[,i] - m[i])/s[i],
-  data = x.test,  m = X.train.mean, s = X.train.sd
-  )
-colnames(x.test.std) <- colnames(x.test)
-
 
 train.error <- list()
 train.error$lasso.3 <- mean((y.train  - predict(mod.Lasso.3, newx = t(data) ))^2)
@@ -194,6 +193,7 @@ train.error$lasso.loocv <- mean((y.train - predict(mod.Lasso.loocv, newx =  t(da
 train.error$ridge <- mean((y.train - predict(mod.ridge, newx =  t(data) ))^2)
 train.error$pcr.small <- mean((y.train - predict(mod.pcr.small, newdata = t(data)))^2)
 train.error$pcr.larger <- mean((y.train - predict(mod.pcr.larger, newdata =  t(data)))^2)
+train.error
 
 test.error <- list()
 test.error$lasso.3 = mean((y.test  - predict(mod.Lasso.3, newx = x.test))^2)
@@ -202,10 +202,12 @@ test.error$lasso.loocv = mean((y.test  - predict(mod.Lasso.loocv, newx = x.test)
 test.error$ridge = mean((y.test  - predict(mod.ridge, newx = x.test ))^2)
 test.error$pcr.small = mean((y.test  - predict(mod.pcr.small, newdata = x.test))^2)
 test.error$pcr.larger = mean((y.test  - predict(mod.pcr.larger, newdata = x.test ))^2)
-#test.error$lm
+test.error
 
 
 ```
+
+Over the test and train errors are reported.
 
 ### g)
 
@@ -240,6 +242,7 @@ colnames(error.data) <- c("lambda.min", "lambda.1se")
 error.data
 
 ```
+From the comparison we can dee that 1se gives consistently smaller test error then the min lambda. Meaning we can assume this is a better model, then the min lambda model.
 
 
 ## Problem 2
@@ -264,18 +267,20 @@ plot(bmi, pbfm, cex =0.2, main= "None")
 x0 = seq(min(bmi), max(bmi), length=250)
 
 plot(bmi, pbfm, cex =0.2, main= "None")
-mod.015 = loess(pbfm~bmi, span=0.15, data = bodyfat.data)
-lines(x = x0, y = predict(mod.015, newdata = x0), col = "4")
+mod.005 = loess(pbfm~bmi, span=0.05, data = bodyfat.data)
+lines(x = x0, y = predict(mod.005, newdata = x0), col = "4")
 
-plot(bmi, pbfm, cex =0.2, main= "h: 0.5")
-mod.05 = loess(pbfm~bmi, span=0.5, data = bodyfat.data)
-lines(x = x0, y = predict(mod.05, newdata = x0), col = "2")
+plot(bmi, pbfm, cex =0.2, main= "h: 0.3")
+mod.03 = loess(pbfm~bmi, span=0.3, data = bodyfat.data)
+lines(x = x0, y = predict(mod.03, newdata = x0), col = "2")
 
 plot(bmi, pbfm, cex =0.2, main= "h: 1")
 mod.1 = loess(pbfm~bmi, span=1, data = bodyfat.data)
 lines(x = x0, y = predict(mod.1, newdata = x0), col = "3")
 
 ```
+
+
 
 ### b)
 
@@ -337,12 +342,14 @@ mod.spline.smooth.075 = smooth.spline(bmi, pbfm, spar = 0.75)
 mod.spline.smooth.125 = smooth.spline(bmi, pbfm, spar = 1.25) 
 
 par(mfrow=c(1,1))
-plot(bmi, pbfm, main = "spline smooth 0.10")
+plot(bmi, pbfm, main = "spline smooth ")
 lines(predict(mod.spline.smooth.050, x = x0), col="red", lwd=2)
 lines(predict(mod.spline.smooth.075, x = x0), col="green", lwd=2)
 lines(predict(mod.spline.smooth.125, x = x0), col="blue", lwd=2)
 
 ```
+
+In this plot we can see three different smooth spline regression, where i have used the tuning parameter 0.5, 0.75 and 1.25. This gives me two quite wiggly estimates and one to strait one. We can see in the plot that the tuning parameter is similar to the problem of overfitting a polynomial.
 
 ### e)
 
@@ -403,7 +410,8 @@ summary(mod$spline.1)
 summary(mod$spline.2)
 summary(mod$spline.3)
 
+mse
+
 ```
 
-I test ing 
-
+To test which model fits the best, i split up the data in two, and used 2/3 as training and 1/3 as testing. Then i calculated the mean test squared error for all of them, and got the data reported over. This shows that the linear model is the one fitting the best. So this is the one i choose. But i am critical of this since there seem to be a curve in the plot of the data, so further testing might be recomended.
